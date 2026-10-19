@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode for Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
+
+/* ──────────────────────────────────────────────────────────
+   Custom properties
+────────────────────────────────────────────────────────── */
+:root {
+  --lavender: #a78bfa;
+  --mint: #6ee7b7;
+  --soft-blue: #93c5fd;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Base resets
+────────────────────────────────────────────────────────── */
+* {
+  scroll-behavior: smooth;
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #1e293b;
+  transition: background-color 0.3s, color 0.3s;
+  min-height: 100vh;
+}
+
+html.dark body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Glassmorphism card
+────────────────────────────────────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 1rem;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.06);
+}
+
+html.dark .glass-card {
+  background: rgba(30, 41, 59, 0.72);
+  border-color: rgba(51, 65, 85, 0.42);
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.20);
+}
+
+/* ──────────────────────────────────────────────────────────
+   Gradient text
+────────────────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(90deg, #7c3aed, #9333ea, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Hero gradient background
+────────────────────────────────────────────────────────── */
+.hero-gradient {
+  background: linear-gradient(135deg, #ede9fe 0%, #e0f2fe 40%, #d1fae5 100%);
+}
+
+html.dark .hero-gradient {
+  background: linear-gradient(135deg, #1e1b4b 0%, #0c1a2e 40%, #064e3b 100%);
+}
+
+/* ──────────────────────────────────────────────────────────
+   Blob animation
+────────────────────────────────────────────────────────── */
+.blob {
+  animation: blobPulse 8s ease-in-out infinite;
+}
+
+@keyframes blobPulse {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  33% { transform: scale(1.05) rotate(2deg); }
+  66% { transform: scale(0.98) rotate(-2deg); }
+}
+
+/* ──────────────────────────────────────────────────────────
+   Scrollbar
+────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #c4b5fd;
+  border-radius: 9999px;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #6d28d9;
+}
+
+/* Chat scrollbar */
+.chat-scroll::-webkit-scrollbar { width: 4px; }
+.chat-scroll::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 9999px; }
