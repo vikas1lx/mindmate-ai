@@ -1,17 +1,24 @@
 /**
  * AppContext.jsx
- * Global state: dark mode, mood data, chat panel, crisis panel visibility.
+ * Global state management for MindMate AI:
+ * - Dark theme enforcement (defaulting to deep navy palette)
+ * - Mood history & tracking
+ * - Last visited mode persistence (localStorage)
+ * - Active mode details & tools view
+ * - Chat panel state with preloaded messages/context
+ * - Crisis safety panel & instant emergency modal
  */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOOD_HISTORY, TODAY_MOOD_DEFAULT, CURRENT_ENERGY, CURRENT_STRESS } from '../data/mockData';
+import { SUPPORT_MODES } from '../data/supportModes';
 
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  // ─── Dark mode ───────────────────────────────────────────
+  // ─── Theme State (Defaulting to Dark Premium Navy) ─────────
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('mindmate-darkmode');
-    return saved ? JSON.parse(saved) : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return saved !== null ? JSON.parse(saved) : true;
   });
 
   useEffect(() => {
@@ -19,7 +26,27 @@ export function AppProvider({ children }) {
     localStorage.setItem('mindmate-darkmode', JSON.stringify(darkMode));
   }, [darkMode]);
 
-  // ─── Mood data ───────────────────────────────────────────
+  // ─── Last Visited Mode (localStorage persistence) ──────────
+  const [lastModeId, setLastModeId] = useState(() => {
+    return localStorage.getItem('mindmate-last-mode') || 'exam-stress';
+  });
+
+  const selectMode = (mode) => {
+    if (!mode) {
+      setSelectedMode(null);
+      return;
+    }
+    const id = typeof mode === 'string' ? mode : mode.id;
+    const found = SUPPORT_MODES.find(m => m.id === id) || mode;
+    setSelectedMode(found);
+    setLastModeId(id);
+    localStorage.setItem('mindmate-last-mode', id);
+  };
+
+  // ─── Selected Mode for Detail View / Modal ────────────────
+  const [selectedMode, setSelectedMode] = useState(null);
+
+  // ─── Mood History & Metrics ────────────────────────────────
   const [moodHistory, setMoodHistory] = useState(() => {
     const saved = localStorage.getItem('mindmate-mood-history');
     return saved ? JSON.parse(saved) : MOOD_HISTORY;
@@ -37,7 +64,6 @@ export function AppProvider({ children }) {
     setTodayMood(mood);
     localStorage.setItem('mindmate-today-mood', JSON.stringify(mood));
 
-    // Append to history
     const today = new Date().toISOString().split('T')[0];
     const updated = [
       ...moodHistory.filter(m => m.date !== today),
@@ -47,7 +73,7 @@ export function AppProvider({ children }) {
     localStorage.setItem('mindmate-mood-history', JSON.stringify(updated));
   };
 
-  // ─── Problem history ──────────────────────────────────────
+  // ─── Problem Input / AI Analysis History ───────────────────
   const [problemHistory, setProblemHistory] = useState(() => {
     const saved = localStorage.getItem('mindmate-problem-history');
     return saved ? JSON.parse(saved) : [];
@@ -59,33 +85,64 @@ export function AppProvider({ children }) {
     localStorage.setItem('mindmate-problem-history', JSON.stringify(updated));
   };
 
-  // ─── Support / crisis panels ──────────────────────────────
-  const [crisisPanelOpen, setCrisisPanelOpen] = useState(false);
+  // ─── Chat Panel State ─────────────────────────────────────
   const [chatOpen, setChatOpen] = useState(false);
   const [chatTopic, setChatTopic] = useState('');
-  const [supportPanelOpen, setSupportPanelOpen] = useState(false);
-  const [selectedMode, setSelectedMode] = useState(null);
+  const [initialChatMessage, setInitialChatMessage] = useState('');
 
-  const openChat = (topic = '') => {
+  const openChat = (topic = '', initialMessage = '') => {
     setChatTopic(topic);
+    setInitialChatMessage(initialMessage);
     setChatOpen(true);
   };
 
+  // ─── Crisis & Safety State ─────────────────────────────────
+  const [crisisPanelOpen, setCrisisPanelOpen] = useState(false);
+  const [crisisModalAlert, setCrisisModalAlert] = useState(false);
+
+  const triggerCrisisAlert = () => {
+    setCrisisModalAlert(true);
+  };
+
   return (
-    <AppContext.Provider value={{
-      darkMode, setDarkMode,
-      moodHistory, todayMood, saveTodayMood, energy, setEnergy, stress, setStress,
-      problemHistory, addProblem,
-      crisisPanelOpen, setCrisisPanelOpen,
-      chatOpen, setChatOpen, chatTopic, openChat,
-      supportPanelOpen, setSupportPanelOpen,
-      selectedMode, setSelectedMode,
-    }}>
+    <AppContext.Provider
+      value={{
+        darkMode,
+        setDarkMode,
+        lastModeId,
+        selectMode,
+        selectedMode,
+        setSelectedMode,
+        moodHistory,
+        todayMood,
+        saveTodayMood,
+        energy,
+        setEnergy,
+        stress,
+        setStress,
+        problemHistory,
+        addProblem,
+        chatOpen,
+        setChatOpen,
+        chatTopic,
+        initialChatMessage,
+        openChat,
+        crisisPanelOpen,
+        setCrisisPanelOpen,
+        crisisModalAlert,
+        setCrisisModalAlert,
+        triggerCrisisAlert,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
 }
 
 export function useApp() {
-  return useContext(AppContext);
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp must be used within an AppProvider');
+  }
+  return context;
 }

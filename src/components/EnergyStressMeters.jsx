@@ -1,6 +1,7 @@
 /**
  * EnergyStressMeters.jsx
- * Animated gauge/progress meters for Energy and Stress levels (0-100).
+ * Animated circular gauge meters for Energy and Stress levels (0-100).
+ * Deep navy theme with neon cyan/emerald and rose accents.
  */
 import { motion } from 'framer-motion';
 import { useApp } from '../context/AppContext';
@@ -12,21 +13,24 @@ function Meter({ label, value, color, emoji, description }) {
   const offset = circumference - (percent / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center gap-2 p-4">
+    <div className="flex flex-col items-center gap-2 p-3 sm:p-4">
       {/* SVG Gauge */}
       <div className="relative w-24 h-24">
         <svg width="96" height="96" viewBox="0 0 96 96" className="-rotate-90">
-          {/* Track */}
+          {/* Background Track */}
           <circle
-            cx="48" cy="48" r={radius}
+            cx="48"
+            cy="48"
+            r={radius}
             fill="none"
-            stroke="currentColor"
+            stroke="rgba(59, 130, 246, 0.15)"
             strokeWidth="8"
-            className="text-slate-200 dark:text-slate-700"
           />
           {/* Progress */}
           <motion.circle
-            cx="48" cy="48" r={radius}
+            cx="48"
+            cy="48"
+            r={radius}
             fill="none"
             stroke={color}
             strokeWidth="8"
@@ -34,91 +38,101 @@ function Meter({ label, value, color, emoji, description }) {
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+            transition={{ duration: 1.2, ease: 'easeOut', delay: 0.2 }}
+            style={{
+              filter: `drop-shadow(0 0 6px ${color}88)`,
+            }}
           />
         </svg>
         {/* Center value */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{percent}</span>
-          <span className="text-xs text-slate-400">%</span>
+          <span className="text-xl font-extrabold text-white">{percent}</span>
+          <span className="text-[10px] text-[#8FA3C7] font-semibold">%</span>
         </div>
       </div>
 
       <div className="text-center">
-        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          {emoji} {label}
+        <p className="text-sm font-bold text-white flex items-center justify-center gap-1">
+          <span>{emoji}</span> {label}
         </p>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{description}</p>
+        <p className="text-[11px] text-[#8FA3C7] mt-0.5">{description}</p>
       </div>
-
-      {/* Slider to adjust */}
     </div>
   );
 }
 
 function getEnergyDesc(v) {
-  if (v >= 80) return 'Energized & focused';
-  if (v >= 60) return 'Moderate energy';
+  if (v >= 80) return 'Fully charged & focused';
+  if (v >= 60) return 'Moderate working energy';
   if (v >= 40) return 'Slightly drained';
-  return 'Low energy — rest up!';
+  return 'Low battery — needs rest';
 }
 
 function getStressDesc(v) {
-  if (v <= 20) return 'Calm & relaxed';
-  if (v <= 40) return 'Mildly stressed';
-  if (v <= 60) return 'Moderate stress';
-  if (v <= 80) return 'High stress today';
-  return 'Very high — breathe!';
+  if (v <= 20) return 'Calm & serene';
+  if (v <= 40) return 'Mild background tension';
+  if (v <= 60) return 'Moderate pressure';
+  if (v <= 80) return 'High stress — breathe';
+  return 'Overloaded — pause now';
 }
 
 export default function EnergyStressMeters() {
   const { energy, stress, setEnergy, setStress } = useApp();
 
   return (
-    <div className="glass-card p-5">
-      <h2 className="font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-        <span className="text-xl">⚡</span> Energy & Stress
-      </h2>
+    <div className="glass-card p-6 rounded-2xl border border-[#3B82F6]/20 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-bold text-white text-base flex items-center gap-2">
+          <span className="text-xl">⚡</span> Energy & Stress Gauges
+        </h2>
+        <span className="text-xs text-cyan-400 font-medium">Real-Time State</span>
+      </div>
 
-      <div className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-700">
+      <div className="grid grid-cols-2 divide-x divide-[#3B82F6]/20 bg-[#0F1D3D]/40 rounded-2xl border border-[#3B82F6]/15 mb-4">
         <Meter
           label="Energy"
           value={energy}
-          color="#34d399"
+          color="#22D3EE"
           emoji="⚡"
           description={getEnergyDesc(energy)}
         />
         <Meter
           label="Stress"
           value={stress}
-          color="#f87171"
+          color="#F43F5E"
           emoji="🌡"
           description={getStressDesc(stress)}
         />
       </div>
 
-      {/* Sliders */}
-      <div className="mt-4 space-y-3 px-2">
+      {/* Adjust Sliders */}
+      <div className="space-y-3 px-1">
         <div>
-          <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+          <div className="flex justify-between text-xs text-[#8FA3C7] mb-1">
             <span>⚡ Adjust Energy</span>
-            <span className="font-medium text-emerald-500">{energy}%</span>
+            <span className="font-bold text-cyan-400">{energy}%</span>
           </div>
           <input
-            type="range" min={0} max={100} value={energy}
-            onChange={e => setEnergy(Number(e.target.value))}
-            className="w-full accent-emerald-500 h-1.5 rounded-full"
+            type="range"
+            min={0}
+            max={100}
+            value={energy}
+            onChange={(e) => setEnergy(Number(e.target.value))}
+            className="w-full accent-cyan-400 h-1.5 rounded-full bg-[#050B1A] cursor-pointer"
           />
         </div>
         <div>
-          <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+          <div className="flex justify-between text-xs text-[#8FA3C7] mb-1">
             <span>🌡 Adjust Stress</span>
-            <span className="font-medium text-red-400">{stress}%</span>
+            <span className="font-bold text-rose-400">{stress}%</span>
           </div>
           <input
-            type="range" min={0} max={100} value={stress}
-            onChange={e => setStress(Number(e.target.value))}
-            className="w-full accent-red-400 h-1.5 rounded-full"
+            type="range"
+            min={0}
+            max={100}
+            value={stress}
+            onChange={(e) => setStress(Number(e.target.value))}
+            className="w-full accent-rose-500 h-1.5 rounded-full bg-[#050B1A] cursor-pointer"
           />
         </div>
       </div>

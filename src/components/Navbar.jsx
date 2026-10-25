@@ -1,10 +1,15 @@
 /**
  * Navbar.jsx
- * Sticky navbar with logo, nav links, dark mode toggle, and CTA button.
+ * Sticky Glassmorphism Navbar with:
+ * - Brand logo with cyan/blue glow
+ * - Route navigation (Home ↔ Dashboard)
+ * - Quick helpline anchor
+ * - Dark mode toggle
+ * - Mobile responsive drawer
  */
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Moon, Sun, Menu, X, Brain } from 'lucide-react';
+import { Moon, Sun, Menu, X, Brain, Heart, ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const NAV_LINKS = [
@@ -15,7 +20,7 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar({ onDashboard, setPage }) {
-  const { darkMode, setDarkMode } = useApp();
+  const { darkMode, setDarkMode, setCrisisPanelOpen } = useApp();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -28,106 +33,143 @@ export default function Navbar({ onDashboard, setPage }) {
   const navClasses = [
     'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
     scrolled
-      ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-md'
+      ? 'bg-[#050B1A]/85 backdrop-blur-xl border-b border-[#3B82F6]/20 shadow-[0_4px_30px_rgba(0,0,0,0.5)]'
       : 'bg-transparent',
   ].join(' ');
 
   return (
     <nav className={navClasses}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+        <div className="flex items-center justify-between h-18">
+          {/* Brand Logo */}
           <button
-            onClick={() => setPage('landing')}
-            className="flex items-center gap-2 group"
+            onClick={() => {
+              setPage('landing');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="flex items-center gap-3 group text-left"
+            aria-label="MindMate AI Home"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-emerald-400 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <Brain size={18} className="text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-cyan-400 flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.4)] group-hover:scale-105 group-hover:shadow-[0_0_25px_rgba(34,211,238,0.6)] transition-all">
+              <Brain size={20} className="text-white" />
             </div>
-            <span className="font-bold text-lg gradient-text">MindMate AI</span>
+            <div>
+              <span className="font-extrabold text-xl tracking-tight text-white flex items-center gap-1.5">
+                MindMate <span className="text-cyan-400 text-xs px-1.5 py-0.5 rounded-md bg-cyan-500/20 border border-cyan-500/40">3D</span>
+              </span>
+              <span className="block text-[10px] text-[#8FA3C7] tracking-wider uppercase">AI Wellness Companion</span>
+            </div>
           </button>
 
-          {/* Desktop Nav */}
+          {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-6">
-            {!onDashboard && NAV_LINKS.map(link => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
-              >
-                {link.label}
-              </a>
-            ))}
+            {!onDashboard &&
+              NAV_LINKS.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="text-sm font-medium text-[#8FA3C7] hover:text-[#22D3EE] transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+
+            {/* Helpline fast-access */}
+            <button
+              onClick={() => setCrisisPanelOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-rose-300 px-3 py-1.5 rounded-xl bg-rose-500/15 border border-rose-500/30 hover:bg-rose-500/25 transition-all"
+            >
+              <Heart size={13} className="fill-rose-400 text-rose-400" />
+              <span>14416 Helpline</span>
+            </button>
 
             {/* Dark mode toggle */}
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors"
-              aria-label="Toggle dark mode"
+              className="p-2.5 rounded-xl glass-card text-[#8FA3C7] hover:text-[#E6EDFF] hover:border-cyan-400/40 transition-colors"
+              aria-label="Toggle theme mode"
             >
-              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+              {darkMode ? <Sun size={17} className="text-cyan-300" /> : <Moon size={17} />}
             </button>
 
-            {/* CTA */}
+            {/* Page switch CTA */}
             {onDashboard ? (
               <button
                 onClick={() => setPage('landing')}
-                className="px-4 py-2 text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-xl transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-[#8FA3C7] hover:text-white glass-card hover:border-cyan-400/50 transition-all rounded-xl"
               >
                 ← Back to Home
               </button>
             ) : (
               <button
-                onClick={() => setPage('dashboard')}
-                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl shadow hover:shadow-lg hover:scale-105 transition-all"
+                onClick={() => {
+                  setPage('dashboard');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl shadow-[0_0_20px_rgba(34,211,238,0.35)] hover:shadow-[0_0_30px_rgba(34,211,238,0.55)] hover:scale-105 active:scale-95 transition-all"
               >
-                Open Dashboard
+                <span>Launch Dashboard</span>
+                <ArrowRight size={15} />
               </button>
             )}
           </div>
 
-          {/* Mobile controls */}
+          {/* Mobile Right Controls */}
           <div className="flex md:hidden items-center gap-2">
             <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+              onClick={() => setCrisisPanelOpen(true)}
+              className="p-2 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs"
+              aria-label="Helpline"
             >
-              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+              <Heart size={17} className="fill-rose-400" />
+            </button>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-xl glass-card text-[#8FA3C7]"
+              aria-label="Theme"
+            >
+              {darkMode ? <Sun size={17} className="text-cyan-300" /> : <Moon size={17} />}
             </button>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+              className="p-2 rounded-xl glass-card text-[#8FA3C7] hover:text-white"
+              aria-label="Menu"
             >
-              {menuOpen ? <X size={18} /> : <Menu size={18} />}
+              {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile drawer */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="md:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 px-4 py-4 flex flex-col gap-3"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden bg-[#0A1630]/95 backdrop-blur-2xl border-b border-[#3B82F6]/30 px-5 py-5 flex flex-col gap-3 shadow-2xl"
           >
-            {!onDashboard && NAV_LINKS.map(link => (
-              <a
-                key={link.label}
-                href={link.href}
-                onClick={() => setMenuOpen(false)}
-                className="text-sm font-medium text-slate-700 dark:text-slate-300 py-2 hover:text-violet-600"
-              >
-                {link.label}
-              </a>
-            ))}
+            {!onDashboard &&
+              NAV_LINKS.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="text-sm font-medium text-[#8FA3C7] py-2 hover:text-cyan-300 border-b border-[#3B82F6]/10"
+                >
+                  {link.label}
+                </a>
+              ))}
             <button
-              onClick={() => { setPage(onDashboard ? 'landing' : 'dashboard'); setMenuOpen(false); }}
-              className="w-full py-2 text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl"
+              onClick={() => {
+                setPage(onDashboard ? 'landing' : 'dashboard');
+                setMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="w-full py-3 mt-2 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl shadow-lg"
             >
-              {onDashboard ? '← Back to Home' : 'Open Dashboard'}
+              {onDashboard ? '← Back to Home' : 'Launch Dashboard →'}
             </button>
           </motion.div>
         )}

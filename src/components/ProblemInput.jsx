@@ -1,41 +1,50 @@
 /**
  * ProblemInput.jsx
- * Custom problem input with:
- * - Crisis keyword detection → opens crisis panel
- * - Loading animation → structured AI response
- * - History of past problems and answers
+ * Structured AI Problem Assistant:
+ * - Textarea with Ctrl+Enter shortcut
+ * - Immediate crisis detection
+ * - Structured response breakdown: Empathy, Understanding, Steps, Today's Action
+ * - History of past conversations
+ * - Styled in dark navy glassmorphism with cyan/blue glow accents
  */
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Loader2, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { Send, Loader2, ChevronDown, ChevronUp, Clock, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateResponse, detectCrisis } from '../data/aiResponses';
 
 function ResponseCard({ entry, index }) {
   const [expanded, setExpanded] = useState(index === 0);
   const date = new Date(entry.timestamp).toLocaleString('en-IN', {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card overflow-hidden"
+      className="glass-card rounded-2xl overflow-hidden border border-[#3B82F6]/20 shadow-md"
     >
       {/* Header */}
       <button
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-[#3B82F6]/10 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{entry.problem}</p>
-          <div className="flex items-center gap-1 mt-0.5">
-            <Clock size={10} className="text-slate-400" />
-            <span className="text-xs text-slate-400">{date}</span>
+        <div className="flex-1 min-w-0 pr-2">
+          <p className="text-sm font-semibold text-white truncate">{entry.problem}</p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <Clock size={11} className="text-cyan-400" />
+            <span className="text-xs text-[#8FA3C7]">{date}</span>
           </div>
         </div>
-        {expanded ? <ChevronUp size={16} className="text-slate-400 ml-2 flex-shrink-0" /> : <ChevronDown size={16} className="text-slate-400 ml-2 flex-shrink-0" />}
+        {expanded ? (
+          <ChevronUp size={18} className="text-cyan-400 flex-shrink-0" />
+        ) : (
+          <ChevronDown size={18} className="text-[#8FA3C7] flex-shrink-0" />
+        )}
       </button>
 
       <AnimatePresence>
@@ -46,38 +55,50 @@ function ResponseCard({ entry, index }) {
             exit={{ height: 0 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 space-y-4 border-t border-slate-100 dark:border-slate-700 pt-4">
+            <div className="px-5 pb-5 space-y-4 border-t border-[#3B82F6]/20 pt-4 bg-[#0A1630]/60">
               {/* Empathy */}
-              <div className="bg-violet-50 dark:bg-violet-900/20 rounded-xl p-3">
-                <p className="text-xs font-semibold text-violet-600 dark:text-violet-400 mb-1">💜 We hear you</p>
-                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed italic">"{entry.response.empathy}"</p>
+              <div className="bg-[#0F1D3D] rounded-xl p-3.5 border border-[#3B82F6]/25">
+                <p className="text-xs font-bold text-cyan-300 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <Sparkles size={12} /> MindMate Empathy
+                </p>
+                <p className="text-sm text-[#E6EDFF] italic leading-relaxed">
+                  "{entry.response.empathy}"
+                </p>
               </div>
 
               {/* Understanding */}
               <div>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">🔍 Understanding your situation</p>
-                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{entry.response.understanding}</p>
+                <p className="text-xs font-bold text-[#8FA3C7] uppercase tracking-wider mb-1">
+                  🔍 Understanding What's Happening
+                </p>
+                <p className="text-xs sm:text-sm text-[#E6EDFF]/90 leading-relaxed">
+                  {entry.response.understanding}
+                </p>
               </div>
 
-              {/* Steps */}
+              {/* Steps forward */}
               <div>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">📋 Steps forward</p>
+                <p className="text-xs font-bold text-[#8FA3C7] uppercase tracking-wider mb-2">
+                  📋 Guided Steps Forward
+                </p>
                 <div className="space-y-2">
                   {entry.response.steps.map((step, i) => (
-                    <div key={i} className="flex items-start gap-2">
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 text-xs flex items-center justify-center font-bold">
+                    <div key={i} className="flex items-start gap-2.5 bg-[#0F1D3D]/50 p-2.5 rounded-xl border border-[#3B82F6]/15">
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs flex items-center justify-center font-bold">
                         {i + 1}
                       </span>
-                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{step}</p>
+                      <p className="text-xs sm:text-sm text-[#E6EDFF] leading-relaxed">{step}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Today's action */}
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 border border-emerald-100 dark:border-emerald-800">
-                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-1">✅ Your one action for today</p>
-                <p className="text-sm text-slate-700 dark:text-slate-200 font-medium">{entry.response.todayAction}</p>
+              {/* Today's one action */}
+              <div className="bg-emerald-950/30 rounded-xl p-3.5 border border-emerald-500/30">
+                <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <CheckCircle2 size={13} /> Your 1 Actionable Move For Today
+                </p>
+                <p className="text-sm text-[#E6EDFF] font-semibold">{entry.response.todayAction}</p>
               </div>
             </div>
           </motion.div>
@@ -88,7 +109,7 @@ function ResponseCard({ entry, index }) {
 }
 
 export default function ProblemInput() {
-  const { addProblem, problemHistory, setCrisisPanelOpen } = useApp();
+  const { addProblem, problemHistory, triggerCrisisAlert } = useApp();
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -97,9 +118,9 @@ export default function ProblemInput() {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
 
-    // Crisis detection
+    // Crisis detection check
     if (detectCrisis(trimmed)) {
-      setCrisisPanelOpen(true);
+      triggerCrisisAlert();
       return;
     }
 
@@ -115,98 +136,75 @@ export default function ProblemInput() {
         response,
       });
       setText('');
-    } catch (err) {
-      setError('Something went wrong. Please try again.');
+    } catch {
+      setError('Something went wrong generating advice. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit();
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-1">
-          💬 Tell MindMate What's On Your Mind
+        <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 flex items-center gap-2">
+          <span>💬</span> Structured MindMate AI Consultation
         </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Describe what you're going through and get personalized, structured support. No judgment.
+        <p className="text-xs sm:text-sm text-[#8FA3C7]">
+          Describe what you are navigating in detail. MindMate will parse the emotional roots and provide step-by-step clarity.
         </p>
       </div>
 
-      {/* Input area */}
-      <div className="glass-card p-5">
+      {/* Input card */}
+      <div className="glass-card p-6 rounded-2xl border border-[#3B82F6]/25 shadow-xl">
         <textarea
           value={text}
-          onChange={e => setText(e.target.value)}
+          onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="E.g. 'I'm really stressed about my exams and I can't sleep…' or 'I had a big argument with my family and I don't know what to do…'"
+          placeholder="E.g. 'I'm experiencing intense pressure between college exams and parental expectations, and I've started procrastinating out of fear…'"
           rows={5}
           disabled={loading}
-          className="w-full text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 px-4 py-3 text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none leading-relaxed disabled:opacity-60"
+          className="w-full text-sm rounded-xl glass-input px-4 py-3 text-[#E6EDFF] placeholder-[#8FA3C7]/60 resize-none leading-relaxed"
         />
 
-        <div className="flex items-center justify-between mt-3">
-          <p className="text-xs text-slate-400">
-            {text.length > 0 && `${text.length} chars · `}Ctrl+Enter to submit
+        <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
+          <p className="text-xs text-[#8FA3C7]">
+            {text.length > 0 && `${text.length} characters · `}Press Ctrl+Enter to submit
           </p>
           <button
             onClick={handleSubmit}
             disabled={!text.trim() || loading}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-violet-500 to-purple-600 disabled:opacity-40 hover:shadow-md hover:scale-[1.02] transition-all"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-blue-600 to-cyan-500 disabled:opacity-40 hover:shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
             {loading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Thinking…
+                <span>Formulating guidance…</span>
               </>
             ) : (
               <>
                 <Send size={16} />
-                Get Support
+                <span>Get Step-by-Step Guidance</span>
               </>
             )}
           </button>
         </div>
 
-        {error && (
-          <p className="text-xs text-red-500 mt-2">{error}</p>
-        )}
+        {error && <p className="text-xs text-rose-400 mt-2">{error}</p>}
       </div>
-
-      {/* Loading animation */}
-      <AnimatePresence>
-        {loading && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="glass-card p-6 flex flex-col items-center gap-3"
-          >
-            <div className="flex gap-2">
-              {[0, 1, 2].map(i => (
-                <motion.div
-                  key={i}
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ repeat: Infinity, delay: i * 0.2, duration: 0.7 }}
-                  className="w-3 h-3 rounded-full bg-violet-400"
-                />
-              ))}
-            </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">MindMate is thinking…</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* History */}
       {problemHistory.length > 0 && (
-        <div>
-          <h3 className="font-semibold text-slate-700 dark:text-slate-200 mb-3 text-sm flex items-center gap-2">
-            <Clock size={15} className="text-slate-400" />
-            Past Conversations ({problemHistory.length})
+        <div className="space-y-3 pt-4">
+          <h3 className="font-bold text-white text-base flex items-center gap-2">
+            <Clock size={16} className="text-cyan-400" />
+            Previous Reflections & Solutions ({problemHistory.length})
           </h3>
           <div className="space-y-3">
             {problemHistory.map((entry, i) => (

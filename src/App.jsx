@@ -1,37 +1,49 @@
 /**
  * App.jsx
- * Root component — manages page routing (landing ↔ dashboard),
- * wraps everything in AppProvider, and mounts global panels.
+ * Root component:
+ * - AppProvider wrapping state
+ * - Ambient 3D Starfield background
+ * - Sticky Glass Navbar
+ * - LandingPage ↔ Dashboard routing
+ * - Global panels: ChatPanel, CrisisPanel, CrisisModal (emergency alert)
  */
 import { useState } from 'react';
 import { AppProvider } from './context/AppContext';
 
 // Layout
 import Navbar from './components/Navbar';
+import StarfieldBackground from './components/3d/StarfieldBackground';
 
 // Pages
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
 
-// Always-visible global panels
+// Global floating panels & Safety Modals
 import ChatPanel from './components/ChatPanel';
 import CrisisPanel from './components/CrisisPanel';
+import CrisisModal from './components/CrisisModal';
 
 export default function App() {
   const [page, setPage] = useState('landing'); // 'landing' | 'dashboard'
 
   return (
     <AppProvider>
-      {/* Sticky navbar — present on all pages */}
+      {/* 3D Starfield / Particle Depth Ambient Background */}
+      <StarfieldBackground />
+
+      {/* Sticky Glass Navbar */}
       <Navbar onDashboard={page === 'dashboard'} setPage={setPage} />
 
-      {/* Page content */}
-      {page === 'landing' && <LandingPage setPage={setPage} />}
-      {page === 'dashboard' && <Dashboard />}
+      {/* Page Routing */}
+      <main className="relative z-10 min-h-screen">
+        {page === 'landing' && <LandingPage setPage={setPage} />}
+        {page === 'dashboard' && <Dashboard />}
+      </main>
 
-      {/* Global panels — always mounted, visibility controlled by context */}
+      {/* Global Panels */}
       <ChatPanel />
       <CrisisPanel />
+      <CrisisModal />
     </AppProvider>
   );
 }
