@@ -40,10 +40,16 @@ export default function App() {
         {page === 'dashboard' && <Dashboard />}
       </main>
 
+      
       {/* Global Panels */}
       <ChatPanel />
       <CrisisPanel />
       <CrisisModal />
+
+      {/* Creator Credit */}
+      <footer className="relative z-10 py-5 text-center text-sm text-gray-400">
+        Hosted with ❤️ by <span className="font-semibold text-cyan-400">Vikas nishad</span>
+      </footer>
     </AppProvider>
   );
 }
