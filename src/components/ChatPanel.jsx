@@ -73,7 +73,25 @@ export default function ChatPanel() {
     setLoading(true);
 
     try {
-      const reply = await generateChatReply(text, { topic: chatTopic, history: messages });
+      const localOpts = { topic: chatTopic, history: messages };
+      let reply;
+      if (detectCrisis(text)) {
+        // Safety first: always use the fixed crisis reply, never the AI model
+        reply = await generateChatReply(text, localOpts);
+      } else {
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ topic: chatTopic, messages: [...messages, userMsg] }),
+          });
+          if (!res.ok) throw new Error('API unavailable');
+          reply = (await res.json()).reply;
+        } catch {
+          // API down / not set up yet: fall back to the built-in rule-based replies
+          reply = await generateChatReply(text, localOpts);
+        }
+      }
       const aiMsg = {
         id: Date.now() + 1,
         role: 'ai',
