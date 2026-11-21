@@ -124,6 +124,23 @@ export const DEFAULT_RESPONSE = {
 };
 
 export async function generateResponse(prompt, modeId = null) {
+  // Curated mode cards stay local; free-text problems go to Gemini first.
+  if (!modeId) {
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ structured: true, messages: [{ role: 'user', text: prompt }] }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.structured) return data.structured;
+      }
+    } catch {
+      // API down / not set up: fall through to the built-in replies below
+    }
+  }
+
   // Simulate natural brief latency for thoughtful feel
   await new Promise(resolve => setTimeout(resolve, 900 + Math.random() * 600));
 
