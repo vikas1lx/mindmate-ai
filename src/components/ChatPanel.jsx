@@ -73,7 +73,7 @@ export default function ChatPanel() {
     setLoading(true);
 
     try {
-      const reply = await generateChatReply(text);
+      const reply = await generateChatReply(text, { topic: chatTopic, history: messages });
       const aiMsg = {
         id: Date.now() + 1,
         role: 'ai',

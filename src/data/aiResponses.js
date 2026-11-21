@@ -5,6 +5,7 @@
  * - Provides realistic, highly empathetic structured responses
  * - Connects to ChatPanel
  */
+import { SUPPORT_MODES } from './supportModes';
 
 // ─── Crisis keyword detection (Safety requirement) ──────────────────────────
 const CRISIS_KEYWORDS = [
@@ -140,23 +141,175 @@ export async function generateResponse(prompt, modeId = null) {
   return { ...DEFAULT_RESPONSE };
 }
 
-// ─── Chat replies ───────────────────────────────────────────────────────────
-const CHAT_RESPONSES = [
-  "I hear how much weight you've been carrying with this. What part feels most urgent right now?",
-  "Thank you for sharing that with me. It takes real honesty to put feelings into words. How long has this been building up?",
-  "That makes complete sense given everything on your plate. What is one small thing that could bring you 5% more peace today?",
-  "You are not alone in navigating this. When things feel overwhelming, we can take it one minute at a time. What does your body feel like right now?",
-  "I'm listening. Take your time — there is no rush, and no judgment here.",
-  "That sounds emotionally draining. Please remember to be gentle with yourself today.",
+// ─── Chat replies (context-aware) ───────────────────────────────────────────
+const CRISIS_REPLY =
+  "I want to make sure you are safe. Please know your life matters and support is available right now. You can call Tele-MANAS toll-free at 14416 (24/7) or iCall at 9152987821. I am an AI and cannot replace real human care, but professionals are ready to help you.";
+
+const pick = (arr, avoid = []) => {
+  const fresh = arr.filter((x) => !avoid.includes(x));
+  const pool = fresh.length ? fresh : arr;
+  return pool[Math.floor(Math.random() * pool.length)];
+};
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const hasTerm = (text, term) => new RegExp(`(^|[^a-z0-9])${escapeRe(term)}([^a-z0-9]|$)`, 'i').test(text);
+
+// Score every mode against the text. Multi-word phrases count more than single words.
+function scoreModes(text) {
+  const lower = text.toLowerCase();
+  return SUPPORT_MODES.map((mode) => {
+    let score = 0;
+    mode.keywords.forEach((kw) => {
+      if (hasTerm(lower, kw.toLowerCase())) score += kw.includes(' ') ? 6 : 3;
+    });
+    if (hasTerm(lower, mode.title.toLowerCase())) score += 8;
+    return { mode, score };
+  })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score);
+}
+
+function findModeByTopic(topic) {
+  if (!topic) return null;
+  const t = topic.toLowerCase();
+  return (
+    SUPPORT_MODES.find((m) => m.title.toLowerCase() === t || m.id === t) ||
+    SUPPORT_MODES.find((m) => t.includes(m.title.toLowerCase())) ||
+    null
+  );
+}
+
+// Detect mode: current message first, then the focus topic, then recent user messages.
+function detectMode(message, topic, history) {
+  const direct = scoreModes(message);
+  if (direct.length) return direct[0].mode;
+  const fromTopic = findModeByTopic(topic);
+  if (fromTopic) return fromTopic;
+  const recentUser = history.filter((m) => m.role === 'user').slice(-3).reverse();
+  for (const m of recentUser) {
+    const s = scoreModes(m.text);
+    if (s.length) return s[0].mode;
+  }
+  return null;
+}
+
+const GREETING_RE = /^(hi|hii+|hello|hey+|heyy+|yo|namaste|good (morning|afternoon|evening))\b/i;
+const THANKS_RE = /\b(thanks|thank you|thx|shukriya|dhanyavaad|helped|feel better)\b/i;
+const YES_NO_RE = /^(yes|yeah|yep|no|nope|nah|maybe|ok|okay|hmm+|idk|i don'?t know)[.! ]*$/i;
+const ASKS_HELP_RE = /\b(what should i do|what do i do|help me|any (tips|advice|suggestion)|how (do|can) i|suggest|advice)\b/i;
+
+const MODE_OPENERS = {
+  'exam-stress': "Exams can make your whole future feel like it hangs on one week.",
+  'sleep-trouble': "Being awake while the rest of the world sleeps is lonely and draining.",
+  overthinking: "Your mind sounds like it's running the same loop on repeat.",
+  'family-problems': "Tension at home is hard because it's the place you're meant to feel safest.",
+  'not-feeling-good': "Thank you for admitting you're not feeling okay. That takes honesty.",
+  'money-problems': "Money stress follows you everywhere, even into quiet moments.",
+  anxiety: "That uneasy, on-edge feeling is exhausting to carry around.",
+  'panic-attack': "I'm right here. What you're feeling is intense, but it will pass.",
+  loneliness: "Feeling unseen or alone is one of the heaviest things to carry.",
+  heartbreak: "I'm sorry. Heartbreak hurts in a very real, physical way.",
+  'career-confusion': "Not knowing which direction to take can feel like standing at a crossroads without a map.",
+  'low-motivation': "When even starting feels heavy, it's not laziness. Your energy is running low.",
+  procrastination: "Avoiding the task usually comes with a lot of guilt on top of it.",
+  burnout: "It sounds like you've been running on empty for a while.",
+  'self-doubt': "That inner critic can be brutal, and it isn't telling you the truth.",
+  anger: "Anger usually means something important felt crossed or ignored.",
+  'friendship-issues': "Friend trouble stings because those bonds matter so much.",
+  homesickness: "Missing home is love showing up in a new place.",
+  'social-pressure': "Comparing yourself to everyone's highlight reel is a rigged game.",
+  'grief-loss': "I'm so sorry for your loss. Grief has no timeline.",
+};
+
+const GENERIC_OPENERS = [
+  "Thank you for telling me that.",
+  "I'm glad you said it out loud.",
+  "That sounds like a lot to hold.",
+  "I'm listening, and there's no judgment here.",
 ];
 
-export async function generateChatReply(message) {
-  await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 500));
-  
-  if (detectCrisis(message)) {
-    return "I want to make sure you are safe. Please know your life matters and support is available right now. You can call Tele-MANAS toll-free at 14416 (24/7) or iCall at 9152987821. I am an AI and cannot replace real human care, but professionals are ready to help you.";
+const GENERIC_FOLLOWUPS = [
+  "Tell me a bit more about what happened. What part is sitting heaviest right now?",
+  "When did this start to feel this way?",
+  "What would feel like even 5% relief today?",
+  "How is your body feeling as you talk about this: tight, tired, restless?",
+];
+
+// Pull a short, safe snippet of what the user said so the reply feels heard.
+function echoOf(message) {
+  const cleaned = message.replace(/\s+/g, ' ').trim();
+  if (cleaned.length < 12 || cleaned.length > 140) return '';
+  return `You said "${cleaned.replace(/[.!?]+$/, '')}".`;
+}
+
+export async function generateChatReply(message, { topic = '', history = [] } = {}) {
+  await new Promise((resolve) => setTimeout(resolve, 600 + Math.random() * 500));
+
+  if (detectCrisis(message)) return CRISIS_REPLY;
+
+  const text = message.trim();
+  const lastAi = history.filter((m) => m.role === 'ai').slice(-4).map((m) => m.text);
+  const userTurns = history.filter((m) => m.role === 'user').length;
+
+  if (GREETING_RE.test(text) && text.split(/\s+/).length <= 4) {
+    return pick(
+      [
+        "Hi 👋 I'm glad you're here. What's been on your mind lately?",
+        "Hello! How are you really feeling today?",
+      ],
+      lastAi,
+    );
   }
 
-  const idx = Math.floor(Math.random() * CHAT_RESPONSES.length);
-  return CHAT_RESPONSES[idx];
+  if (THANKS_RE.test(text) && !scoreModes(text).length) {
+    return pick(
+      [
+        "I'm really glad that helped. Is there anything else on your mind, or would you like to try a breathing exercise?",
+        "Happy to be here with you. Remember to go gently today. Want to talk through anything else?",
+      ],
+      lastAi,
+    );
+  }
+
+  const mode = detectMode(text, topic, history);
+
+  // Very short replies like "yes" / "idk": nudge gently, stay in context.
+  if (YES_NO_RE.test(text)) {
+    const q = mode ? mode.checkInQuestion : null;
+    return pick(
+      [
+        q ? `That's okay, you don't need the perfect words. ${q}` : "That's okay, take your time. What feels closest to what you're going through?",
+        "No pressure at all. Even one word about how you feel right now is enough to start.",
+      ],
+      lastAi,
+    );
+  }
+
+  // Mode-specific, varied, and tied to what the user actually wrote.
+  if (mode) {
+    const tips = mode.tools?.quickTips || [];
+    const usedTips = lastAi.join(' ');
+    const tip = pick(tips.filter((t) => !usedTips.includes(t)).length ? tips.filter((t) => !usedTips.includes(t)) : tips);
+    const opener = MODE_OPENERS[mode.id] || pick(GENERIC_OPENERS, lastAi);
+    const wantsAdvice = ASKS_HELP_RE.test(text) || userTurns >= 1;
+
+    const parts = [opener];
+    if (wantsAdvice && tip) parts.push(`One thing that can help with ${mode.title.toLowerCase()}: ${tip}`);
+    const followups = [mode.checkInQuestion, mode.tools?.journaling?.prompt].filter(Boolean);
+    const follow = pick(followups, lastAi.map((t) => t.split('\n').pop()));
+    if (follow) parts.push(follow);
+    if (userTurns >= 3 && mode.counselorNote) parts.push(`Gentle note: ${mode.counselorNote}`);
+
+    return parts.join(' ');
+  }
+
+  // No mode matched. Still respond to what was said instead of a canned line.
+  const echo = echoOf(text);
+  const parts = [pick(GENERIC_OPENERS, lastAi)];
+  if (echo) parts.push(echo);
+  if (ASKS_HELP_RE.test(text)) {
+    parts.push("Let's make it smaller: write down the one thing that matters most right now, then one action that takes under 5 minutes.");
+  }
+  parts.push(pick(GENERIC_FOLLOWUPS, lastAi));
+  return parts.join(' ');
 }
