@@ -11,6 +11,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOOD_HISTORY, TODAY_MOOD_DEFAULT, CURRENT_ENERGY, CURRENT_STRESS } from '../data/mockData';
 import { SUPPORT_MODES } from '../data/supportModes';
+import { dbEnabled, fetchMoods, saveMoods, fetchProblems, saveProblems } from '../lib/db';
 
 const AppContext = createContext(null);
 
@@ -71,6 +72,7 @@ export function AppProvider({ children }) {
     ];
     setMoodHistory(updated);
     localStorage.setItem('mindmate-mood-history', JSON.stringify(updated));
+    saveMoods([updated.find(m => m.date === today)]); // cloud sync (no-op if DB off)
   };
 
   // ─── Problem Input / AI Analysis History ───────────────────
@@ -83,7 +85,48 @@ export function AppProvider({ children }) {
     const updated = [entry, ...problemHistory];
     setProblemHistory(updated);
     localStorage.setItem('mindmate-problem-history', JSON.stringify(updated));
+    saveProblems([entry]); // cloud sync (no-op if DB off)
   };
+
+  // ─── One-time cloud sync on load (merge DB + local, never lose data) ───
+  useEffect(() => {
+    if (!dbEnabled) return;
+    let cancelled = false;
+    (async () => {
+      const [remoteMoods, remoteProblems] = await Promise.all([fetchMoods(), fetchProblems()]);
+      if (cancelled) return;
+
+      // Moods: only treat local as real data if the user has saved some (not demo data)
+      if (remoteMoods) {
+        const savedRaw = localStorage.getItem('mindmate-mood-history');
+        const localReal = savedRaw ? JSON.parse(savedRaw) : [];
+        const byDate = new Map(localReal.map(m => [m.date, m]));
+        remoteMoods.forEach(m => byDate.set(m.date, m)); // DB wins on conflict
+        const merged = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+        if (merged.length) {
+          setMoodHistory(merged);
+          localStorage.setItem('mindmate-mood-history', JSON.stringify(merged));
+        }
+        const remoteDates = new Set(remoteMoods.map(m => m.date));
+        const demoDates = new Set(MOOD_HISTORY.map(m => m.date)); // never upload demo data
+        saveMoods(localReal.filter(m => !remoteDates.has(m.date) && !demoDates.has(m.date))); // upload local-only
+      }
+
+      // Problems: union by id, newest first
+      if (remoteProblems) {
+        const savedRaw = localStorage.getItem('mindmate-problem-history');
+        const local = savedRaw ? JSON.parse(savedRaw) : [];
+        const byId = new Map(local.map(p => [p.id, p]));
+        remoteProblems.forEach(p => byId.set(p.id, p));
+        const merged = [...byId.values()].sort((a, b) => b.id - a.id);
+        setProblemHistory(merged);
+        localStorage.setItem('mindmate-problem-history', JSON.stringify(merged));
+        const remoteIds = new Set(remoteProblems.map(p => p.id));
+        saveProblems(local.filter(p => !remoteIds.has(p.id)));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // ─── Chat Panel State ─────────────────────────────────────
   const [chatOpen, setChatOpen] = useState(false);
