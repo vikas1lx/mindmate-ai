@@ -34,7 +34,8 @@ async function request(path, { method = 'GET', body, prefer } = {}) {
       method,
       headers: {
         apikey: KEY,
-        Authorization: `Bearer ${KEY}`,
+        // Legacy anon keys are JWTs; new sb_publishable_ keys are not and go in apikey only
+        ...(KEY.startsWith('eyJ') ? { Authorization: `Bearer ${KEY}` } : {}),
         'Content-Type': 'application/json',
         'x-device-id': getDeviceId(), // used by row-level-security policies
         ...(prefer ? { Prefer: prefer } : {}),
